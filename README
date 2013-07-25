@@ -1,0 +1,24 @@
+To install (On Ubuntu):
+
+	Setup PIP:
+		sudo apt-get install pip
+
+	Setup Jenkins:
+		(http://jenkins-ci.org/)
+		wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+		deb http://pkg.jenkins-ci.org/debian binary/
+		sudo apt-get update
+		sudo apt-get install jenkins
+
+	Setup Lettuce:
+		sudo -E pip install lettuce
+		sudo -E C_INCLUDE_PATH=/usr/include/mpi pip install netcdf4
+
+To use:
+	You probably need to edit the mpas_tasks.py script to have the correct
+	location for ocean_model.
+
+	Once you have the script modified. The directory this repository creates
+	needs to be called features. Then you simply run `lettuce from above the
+	features directory.
+
