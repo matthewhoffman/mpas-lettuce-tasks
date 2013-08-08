@@ -55,7 +55,7 @@ def get_test_case(step, size, levs, test, time_stepper):
 	os.chdir(world.rundir)
 	command = "ln"
 	arg1 = "-s"
-	arg2 = "/var/lib/jenkins/jobs/MPAS-Ocean/workspace/ocean_model"
+	arg2 = "../ocean_model"
 	subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
 
 	command = "cp"
