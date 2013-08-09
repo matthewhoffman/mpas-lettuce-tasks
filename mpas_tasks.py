@@ -16,36 +16,36 @@ def seconds_to_timestamp(seconds):
 	hours = 0
 	minutes = 0
 	
-	if seconds > 24*3600:
+	if seconds >= 24*3600:
 		days = int(seconds/(24*3600))
 		seconds = seconds - int(days * 24 * 3600)
 
-	if seconds > 3600:
+	if seconds >= 3600:
 		hours = int(seconds/3600)
 		seconds = seconds - int(hours*3600)
 
-	if seconds > 60:
+	if seconds >= 60:
 		minutes = int(seconds/60)
 		seconds = seconds - int(minutes*60)
 
 	timestamp = "%4.4d_%2.2d:%2.2d:%2.2d"%(days, hours, minutes, seconds)
 	return timestamp
 
-@step('A (\d+)m (\d+)levs "([^"]*)" "([^"]*)" test')
+@step('A "([^"]*)" "([^"]*)" "([^"]*)" "([^"]*)" test')
 def get_test_case(step, size, levs, test, time_stepper):
 	world.basedir = os.getcwd()
-	world.rundir = "baroclinic_channel_%sm_20levs"%size
+	world.rundir = "%s_%s_%s"%(test, size, levs)
 	world.num_runs = 0
 
 	if not os.path.exists("%s/%s.tgz"%(world.basedir, world.rundir)):
 		command = "wget"
-		arg1 = "http://oceans11.lanl.gov/mpas_data/mpas_ocean/test_cases/release_1.0/baroclinic_channel_%sm_20levs.tgz"%(size)
+		arg1 = "http://oceans11.lanl.gov/mpas_data/mpas_ocean/test_cases/release_1.0/%s.tgz"%(world.rundir)
 		subprocess.call([command, arg1], stdout=dev_null, stderr=dev_null)
 
 	if not os.path.exists("%s/%s"%(world.basedir, world.rundir)):
 		command = "tar"
 		arg1 = "xzf"
-		arg2 = "baroclinic_channel_%sm_20levs.tgz"%size
+		arg2 = "%s.tgz"%world.rundir
 		subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
 		command = "cp"
 		arg1 = "%s/namelist.input"%world.rundir
