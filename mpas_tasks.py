@@ -39,7 +39,7 @@ def get_test_case(step, size, levs, test, time_stepper):
 
 	if not os.path.exists("%s/%s.tgz"%(world.basedir, world.rundir)):
 		command = "wget"
-		arg1 = "http://oceans11.lanl.gov/mpas_data/mpas_ocean/test_cases/release_1.0/%s.tgz"%(world.rundir)
+		arg1 = "http://oceans11.lanl.gov/mpas_data/mpas_ocean/test_cases/staging/%s.tgz"%(world.rundir)
 		subprocess.call([command, arg1], stdout=dev_null, stderr=dev_null)
 
 	if not os.path.exists("%s/%s"%(world.basedir, world.rundir)):
