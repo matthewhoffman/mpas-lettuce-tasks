@@ -53,6 +53,15 @@ def get_test_case(step, size, levs, test, time_stepper):
 		subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
 
 	os.chdir(world.rundir)
+	if os.path.exists("%s/ocean_model_develop"%(world.basedir)):
+		world.develop_exists = True
+		command = "ln"
+		arg1 = "-s"
+		arg2 = "../ocean_model_develop"
+		subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
+	else:
+		world.develop_exists = False
+
 	command = "ln"
 	arg1 = "-s"
 	arg2 = "../ocean_model"
@@ -116,7 +125,6 @@ def get_test_case(step, size, levs, test, time_stepper):
 
 	os.chdir(world.basedir)
 
-
 @step('A (\d+) processor MPAS run')
 def run_mpas(step, procs):
 	os.chdir(world.basedir)
@@ -142,6 +150,35 @@ def run_mpas(step, procs):
 		world.num_runs = 2
 		world.run2 = arg2
 	os.chdir(world.basedir)
+
+@step('A (\d+) processor MPAS develop run')
+def run_mpas(step, procs):
+	if not world.develop_exists:
+		print "Develop not built. Skipping develop run..."
+	else:
+		os.chdir(world.basedir)
+		os.chdir(world.rundir)
+		command = "mpirun"
+		arg1 = "-n"
+		arg2 = "%s"%procs
+		arg3 = "ocean_model_develop"
+		subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
+		command = "mv"
+		arg1 = "output.0000-01-01_00.00.00.nc"
+		arg2 = "%sprocs.output.nc"%procs
+		subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
+		if world.num_runs == 0:
+			world.num_runs = 1
+			world.run1 = arg2
+			try:
+				del world.rms_values
+				world.rms_values = defaultdict(list)
+			except:
+				world.rms_values = defaultdict(list)
+		elif world.num_runs == 1:
+			world.num_runs = 2
+			world.run2 = arg2
+		os.chdir(world.basedir)
 
 @step('A (\d+) processor MPAS run with restart')
 def run_mpas_with_restart(step, procs):
@@ -234,25 +271,31 @@ def run_mpas_with_restart(step, procs):
 
 @step('I compute the RMS of "([^"]*)"')
 def compute_rms(step, variable):
-	f1 = NetCDFFile("%s/%s"%(world.rundir,world.run1),'r')
-	f2 = NetCDFFile("%s/%s"%(world.rundir,world.run2),'r')
+	if world.num_runs == 2:
+		f1 = NetCDFFile("%s/%s"%(world.rundir,world.run1),'r')
+		f2 = NetCDFFile("%s/%s"%(world.rundir,world.run2),'r')
 
-	field1 = f1.variables["%s"%variable][-1,:,:]
-	field2 = f2.variables["%s"%variable][-1,:,:]
+		field1 = f1.variables["%s"%variable][-1,:,:]
+		field2 = f2.variables["%s"%variable][-1,:,:]
 
-	field1 = field1 - field2
-	field1 = field1 * field1
-	rms = sum(field1)
-	rms = rms / sum(field1.shape[:])
-	rms = math.sqrt(rms)
-	world.rms_values[variable].append(rms)
-	f1.close()
-	f2.close()
-	os.chdir(world.basedir)
+		field1 = field1 - field2
+		field1 = field1 * field1
+		rms = sum(field1)
+		rms = rms / sum(field1.shape[:])
+		rms = math.sqrt(rms)
+		world.rms_values[variable].append(rms)
+		f1.close()
+		f2.close()
+		os.chdir(world.basedir)
+	else:
+		print 'Less than two runs. Skipping RMS computation.'
 
 @step('I see "([^"]*)" RMS of 0')
 def check_rms_values(step, variable):
-	assert world.rms_values[variable][0] == 0.0, '%s RMS failed.'%variable
+	if world.num_runs == 2:
+		assert world.rms_values[variable][0] == 0.0, '%s RMS failed.'%variable
+	else:
+		print 'Less than two runs. Skipping RMS check.'
 
 
 @step('I clean the test directory')
