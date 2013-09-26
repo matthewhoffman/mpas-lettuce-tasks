@@ -165,7 +165,7 @@ def run_mpas(step, procs):
 		subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
 		command = "mv"
 		arg1 = "output.0000-01-01_00.00.00.nc"
-		arg2 = "%sprocs.output.nc"%procs
+		arg2 = "%sprocs.output.develop.nc"%procs
 		subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
 		if world.num_runs == 0:
 			world.num_runs = 1
