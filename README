@@ -3,16 +3,17 @@ To install (On Ubuntu):
 	Setup PIP:
 		sudo apt-get install pip
 
-	Setup Jenkins:
-		(http://jenkins-ci.org/)
-		wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
-		deb http://pkg.jenkins-ci.org/debian binary/
-		sudo apt-get update
-		sudo apt-get install jenkins
-
 	Setup Lettuce:
 		sudo -E pip install lettuce
 		sudo -E C_INCLUDE_PATH=/usr/include/mpi pip install netcdf4
+
+Layout:
+    Within this repository, each core gets it's own directory, with it's own
+    feature and task definitions. The task directory contains shared tasks that
+    all cores should be able to use.
+
+    Task files from the tasks directory should be symlinked into each of the
+    component directories.
 
 To use:
 	You probably need to edit the mpas_tasks.py script to have the correct
@@ -21,4 +22,8 @@ To use:
 	Once you have the script modified. The directory this repository creates
 	needs to be called features. Then you simply run `lettuce from above the
 	features directory.
+
+    You can pass the directory for a particular feature set into lettuce, i.e.:
+    `lettuce features/ocean`
+    to test just the features related to a specific core.
 
