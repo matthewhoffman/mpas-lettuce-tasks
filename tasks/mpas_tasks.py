@@ -33,7 +33,7 @@ def seconds_to_timestamp(seconds):
 
 @step('A (\d+) processor MPAS "([^"]*)" run')
 def run_mpas(step, procs, executable):
-	if not world.develop_exists:
+	if ('_develop' in executable) and not world.develop_exists:  # If we aren't trying to run with develop for this particular test, then don't require that _develop exist.
 		print "Develop not built. Skipping develop run..."
 	else:
 		os.chdir(world.basedir)
@@ -42,11 +42,17 @@ def run_mpas(step, procs, executable):
 		arg1 = "-n"
 		arg2 = "%s"%procs
 		arg3 = "%s"%executable
-		subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
+		returncode = subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
+		assert returncode==0, 'Running '+executable+' failed.'  # Throw an error if the model did not run successfully.
+		if os.path.exists('output.nc'):
+			outfile = 'output.nc'
+		else:
+			outfile = "output.0000-01-01_00.00.00.nc"
 		command = "mv"
-		arg1 = "output.0000-01-01_00.00.00.nc"
+		arg1 = outfile
 		arg2 = "%sprocs.output.nc"%procs
-		subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
+		returncode = subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
+		assert returncode==0, 'Renaming output file, '+outfile+', failed.'  # Throw an error if there is a problem with the output file.
 		if world.num_runs == 0:
 			world.num_runs = 1
 			world.run1 = arg2
@@ -99,6 +105,7 @@ def run_mpas_with_restart(step, procs, executable):
 	arg2 = "%s"%procs
 	arg3 = "%s"%executable
 	subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
+	assert returncode==0, 'Running cold start of '+executable+' failed.'  # Throw an error if the model did not run successfully.
 
 	command = "rm"
 	arg1 = "-f"
@@ -127,8 +134,9 @@ def run_mpas_with_restart(step, procs, executable):
 	command = "mpirun"
 	arg1 = "-n"
 	arg2 = "%s"%procs
-	arg3 = "ocean_model"
+	arg3 = "%s"%executable
 	subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
+	assert returncode==0, 'Running restart of '+executable+' failed.'  # Throw an error if the model did not run successfully.
 
 	command = "mv"
 	arg1 = "output.0000-01-%s.nc"%(final_time[2:].replace(":","."))
@@ -154,9 +162,14 @@ def compute_rms(step, variable):
 	if world.num_runs == 2:
 		f1 = NetCDFFile("%s/%s"%(world.rundir,world.run1),'r')
 		f2 = NetCDFFile("%s/%s"%(world.rundir,world.run2),'r')
-
-		field1 = f1.variables["%s"%variable][-1,:,:]
-		field2 = f2.variables["%s"%variable][-1,:,:]
+		if len(f1.variables["%s"%variable].shape) == 3:
+			field1 = f1.variables["%s"%variable][-1,:,:]
+			field2 = f2.variables["%s"%variable][-1,:,:]
+		elif len(f1.variables["%s"%variable].shape) == 2:
+			field1 = f1.variables["%s"%variable][-1,:]
+			field2 = f2.variables["%s"%variable][-1,:]
+		else:
+			assert False, "Unexpected number of dimensions in output file."
 
 		field1 = field1 - field2
 		field1 = field1 * field1
