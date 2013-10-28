@@ -39,11 +39,14 @@ def run_mpas(step, procs, executable):
 		os.chdir(world.basedir)
 		os.chdir(world.rundir)
 		command = "mpirun"
-		arg1 = "-n"
+                arg1 = "-n"
 		arg2 = "%s"%procs
 		arg3 = "%s"%executable
-		returncode = subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
-		assert returncode==0, 'Running '+executable+' failed.'  # Throw an error if the model did not run successfully.
+                try:
+                   subprocess.check_call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)  # check_call will throw an error if return code is not 0.
+                except:
+                   os.chdir(world.basedir)  # return to basedir before err'ing.
+                   raise
 		if os.path.exists('output.nc'):
 			outfile = 'output.nc'
 		else:
@@ -51,8 +54,11 @@ def run_mpas(step, procs, executable):
 		command = "mv"
 		arg1 = outfile
 		arg2 = "%sprocs.output.nc"%procs
-		returncode = subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
-		assert returncode==0, 'Renaming output file, '+outfile+', failed.'  # Throw an error if there is a problem with the output file.
+                try:
+		   subprocess.check_call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)  # check_call will throw an error if return code is not 0.
+                except:
+                   os.chdir(world.basedir)  # return to basedir before err'ing.
+                   raise
 		if world.num_runs == 0:
 			world.num_runs = 1
 			world.run1 = arg2
@@ -104,9 +110,11 @@ def run_mpas_with_restart(step, procs, executable):
 	arg1 = "-n"
 	arg2 = "%s"%procs
 	arg3 = "%s"%executable
-	subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
-	assert returncode==0, 'Running cold start of '+executable+' failed.'  # Throw an error if the model did not run successfully.
-
+        try:
+	   subprocess.check_call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)  # check_call will throw an error if return code is not 0.
+        except:
+           os.chdir(world.basedir)  # return to basedir before err'ing.
+           raise
 	command = "rm"
 	arg1 = "-f"
 	arg2 = "output.0000-01-01_00.00.00.nc"
@@ -135,13 +143,20 @@ def run_mpas_with_restart(step, procs, executable):
 	arg1 = "-n"
 	arg2 = "%s"%procs
 	arg3 = "%s"%executable
-	subprocess.call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
-	assert returncode==0, 'Running restart of '+executable+' failed.'  # Throw an error if the model did not run successfully.
+        try:
+	   subprocess.check_call([command, arg1, arg2, arg3], stdout=dev_null, stderr=dev_null)
+        except:
+           os.chdir(world.basedir)  # return to basedir before err'ing.
+           raise
 
 	command = "mv"
 	arg1 = "output.0000-01-%s.nc"%(final_time[2:].replace(":","."))
 	arg2 = "%sprocs.restarted.output.nc"%procs
-	subprocess.call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
+        try:
+	   subprocess.check_call([command, arg1, arg2], stdout=dev_null, stderr=dev_null)
+        except:
+           os.chdir(world.basedir)  # return to basedir before err'ing.
+           raise
 
 	if world.num_runs == 0:
 		world.num_runs = 1
